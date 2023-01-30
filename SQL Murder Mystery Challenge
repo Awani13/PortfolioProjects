@@ -1,0 +1,134 @@
+-- Retrieving the data for the first given condition to find some clue
+Select * from Crime_scene_report
+where date = 20180115
+and type = 'murder'
+and city = 'SQL City';
+
+		Security footage shows that there were 2 witnesses. The first witness lives at the last house on "Northwestern Dr".
+		The second witness, named Annabel, lives somewhere on "Franklin Ave".
+		
+-- Retrieving the data to find the two witnesses
+Select * from Person
+where address_street_name = 'Northwestern Dr'
+order by address_number desc
+limit 1		
+		
+		14887	Morty Schapiro	118009	4919	Northwestern Dr	111564949
+		
+Select * from Person
+where name like "Annabel%"
+and address_street_name = 'Franklin Ave'
+
+		16371	Annabel Miller	490173	103	Franklin Ave	318771143
+		
+		
+-- Retrieving the data  from the interview table to find what the two witnesses said
+Select p.name, p.id, i.transcript 
+from interview i
+Join Person p on p.id = i.person_id
+where person_id IN (14887, 16371)		
+
+		
+		name	id	transcript
+		Morty Schapiro	14887	I heard a gunshot and then saw a man run out. He had a "Get Fit Now Gym" bag. The membership number on the bag started with "48Z". Only gold members have those bags. The man got into a car with a plate that included "H42W".
+		Annabel Miller	16371	I saw the murder happen, and I recognized the killer from my gym when I was working out last week on January the 9th.
+		
+		
+-- Verifying what Morty Schapiro said
+Select * from get_fit_now_member g
+where membership_status = 'gold'
+and id like '48Z%'
+
+			48Z7A	28819	Joe Germuska	20160305	gold
+			48Z55	67318	Jeremy Bowers	20160101	gold
+			
+			
+-- Verifying what Morty Schapiro said
+Select p.name, p.id, d.id as License_Id, d.age, d.height, d.eye_color,
+d.hair_color, d.gender, d.plate_number, d.car_make, d.car_model
+from drivers_license d
+Join Person p on d.id = p.license_id
+where d.plate_number like '%H42W%'
+
+			name	id	License_Id	age	height	eye_color	hair_color	gender	plate_number	car_make	car_model
+			Tushar Chandra	51739	664760	21	71	black	black	male	4H42WR	Nissan	Altima
+			Jeremy Bowers	67318	423327	30	70	brown	brown	male	0H42W2	Chevrolet	Spark LS
+			Maxine Whitely	78193	183779	21	65	blue	blonde	female	H42W0X	Toyota	Prius
+
+
+
+-- Verifying what Annabel Miller said
+Select m.name, m.id, m.person_id, c.check_in_date,
+m.membership_status
+from get_fit_now_member m
+join get_fit_now_check_in c 
+on c.membership_id = m.id
+where c.check_in_date = 20180109
+
+			name	id	person_id	check_in_date	membership_status
+			Shondra Ledlow	X0643	15247	20180109	silver
+			Zackary Cabotage	UK1F2	28073	20180109	silver
+			Sarita Bartosh	XTE42	55662	20180109	gold
+			Adriane Pelligra	1AE2H	10815	20180109	silver
+			Burton Grippe	6LSTG	83186	20180109	gold
+			Blossom Crescenzo	7MWHJ	31523	20180109	regular
+			Carmen Dimick	GE5Q8	92736	20180109	gold
+			Joe Germuska	48Z7A	28819	20180109	gold
+			Jeremy Bowers	48Z55	67318	20180109	gold
+			Annabel Miller	90081	16371	20180109	gold
+
+			
+-- Combining both the clues
+
+Select m.name, m.id, m.person_id, c.check_in_date,
+m.membership_status
+from get_fit_now_member m
+join get_fit_now_check_in c 
+on c.membership_id = m.id
+where c.check_in_date = 20180109
+and m.id like '48Z%'
+and m.membership_status = 'gold'
+
+
+				name	id	person_id	check_in_date	membership_status
+				Joe Germuska	48Z7A	28819	20180109	gold
+				Jeremy Bowers	48Z55	67318	20180109	gold
+			
+			
+			
+-- Interviews of the two suspects
+
+Select * from interview
+where Person_id IN (28819, 67318)
+
+			person_id	transcript
+			67318	I was hired by a woman with a lot of money. I don't know her name but I know she's around 5'5" (65") or 5'7" (67"). She has red hair and she drives a Tesla Model S. I know that she attended the SQL Symphony Concert 3 times in December 2017.
+			
+			
+-- So we found out that Jeremy Bowers was the murderer. Now let's find out who hired him
+
+select p.name , d.hair_color, d.height, d.gender, d.car_make,d.car_model, 
+f.event_id, f.event_name, f.event_name, f.date
+from person p
+Join facebook_event_checkin f on p.id = f.person_id
+Join drivers_license d on p.license_id = d.id
+where d.gender = 'female'
+and d.height between 65 and 67
+and d.hair_color = 'red'
+and d.car_make = 'Tesla'
+and d.car_model = 'Model S'
+
+
+					name	hair_color	height	gender	car_make	car_model	event_id	event_name	event_name	date
+					Miranda Priestly	red	66	female	Tesla	Model S	1143	SQL Symphony Concert	SQL Symphony Concert	20171206
+					Miranda Priestly	red	66	female	Tesla	Model S	1143	SQL Symphony Concert	SQL Symphony Concert	20171212
+					Miranda Priestly	red	66	female	Tesla	Model S	1143	SQL Symphony Concert	SQL Symphony Concert	20171229
+					
+					
+-- Miranda Priestly is the one who hired Jeremy Bowers to murder. 					
+
+
+			
+
+
+
